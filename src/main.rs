@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use actix_web::{App, HttpResponse, HttpServer, web, Error};
-use actix_multipart::{Multipart, form::{MultipartForm, tempfile::TempFile, text::Text}};
+use actix_multipart::{Multipart, form::{MultipartForm, tempfile::TempFile, text::Text, MultipartFormConfig}};
 use futures_util::{TryStreamExt};
 
 #[derive(Debug, MultipartForm)]
@@ -55,9 +55,13 @@ async fn upload(mut payload:Multipart) -> Result<HttpResponse, Error>{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new()
-    .route("archivosmultipart", web::post().to(formulario_multipart))
-    .route("subirarchivo", web::post().to(upload)))
+    HttpServer::new(|| {
+        let multipartform_config = MultipartFormConfig::default().total_limit(1024 * 1024 * 100).memory_limit(1024 * 1024 * 100);
+        App::new()
+        .app_data(multipartform_config)
+        .route("archivosmultipart", web::post().to(formulario_multipart))
+        .route("subirarchivo", web::post().to(upload))
+    })
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
